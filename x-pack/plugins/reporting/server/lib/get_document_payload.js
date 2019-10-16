@@ -4,7 +4,15 @@
  * you may not use this file except in compliance with the Elastic License.
  */
 
+// @ts-ignore
+import contentDisposition from 'content-disposition';
+// @ts-ignore
 import { oncePerServer } from './once_per_server';
+
+const DEFAULT_TITLE = 'report';
+
+const getTitle = (exportType, title) =>
+  `${title || DEFAULT_TITLE}.${exportType.jobContentExtension}`;
 
 function getDocumentPayloadFn(server) {
   const exportTypesRegistry = server.plugins.reporting.exportTypesRegistry;
@@ -20,12 +28,14 @@ function getDocumentPayloadFn(server) {
 
   function getCompleted(output, jobType, title) {
     const exportType = exportTypesRegistry.get(item => item.jobType === jobType);
+    const filename = getTitle(exportType, title);
+
     return {
       statusCode: 200,
       content: encodeContent(output.content, exportType),
       contentType: output.content_type,
       headers: {
-        'Content-Disposition': `inline; filename="${title || 'report'}.${exportType.jobContentExtension}"`
+        'Content-Disposition': contentDisposition(filename, { type: 'inline' }),
       }
     };
   }
